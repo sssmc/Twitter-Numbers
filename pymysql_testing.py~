@@ -1,0 +1,58 @@
+import pymysql as pysql
+
+import json;
+import re;
+
+from tweepy import Stream
+from tweepy import OAuthHandler
+from tweepy.streaming import StreamListener
+
+auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB', 'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
+auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa', 'PaWOAasOFoPFDdYMARVr31mK1iy35sOqhZzpr1fDmNkZX')
+
+class listener(StreamListener):
+
+    def on_data(self, data):
+
+        all_data = json.loads(data)
+
+        pro = process_tweet(all_data)
+
+	for s in pro:
+	   print(s)
+
+        return(True)
+
+    def on_error(self, status):
+        print(status)
+
+def process_tweet(tweet):
+
+   pro_tweet_l = re.findall(r'\b\d+\b',tweet["text"])
+
+   return pro_tweet_l
+   
+
+def set_tweet(tweet):
+   global current_tweet
+   current_tweet = tweet
+
+def print_tweet():
+   print(current_tweet[0])
+
+set_tweet("none")
+
+stream = twitterStream = Stream(auth, listener())
+twitterStream.filter(track=["car"], async=True)
+
+db = pysql.connect("localhost", "root", "Climate123", "test")
+c = db.cursor()
+print(c.execute("SHOW DATABASES"))
+
+db.close()
+
+#while True:
+   #print_tweet()
+
+
+
