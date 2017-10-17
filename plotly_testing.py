@@ -14,6 +14,8 @@ year = input("Year: ")
 month = input("Month: ")
 day = input("Day: ")
 table_name = "tn_" + version + "_" + year +"_" + month + "_" + day + "_"
+start_num = int(input("Using number from: "))
+end_num = int(input("To: "))
 
 def get_total_nums(table_name):
     c.execute("SELECT * FROM " + table_name)
@@ -32,7 +34,7 @@ for x in range(table_start_hour, table_start_hour + num_tables):
     num_list = []
     count_list = []
 
-    for i in range(0,101):
+    for i in range(start_num,end_num + 1):
         try:
             c.execute("SELECT * FROM " + table_name + str(x) + " WHERE number LIKE %s", (i))
             num_list.append(c.fetchall()[0][0])
