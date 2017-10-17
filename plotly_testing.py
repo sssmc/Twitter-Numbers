@@ -45,7 +45,7 @@ for x in range(table_start_hour, table_start_hour + num_tables):
     print(num_list)
     print(count_list)
 
-    label_name = "Oct. 13, " + str(x) +"th hour(%)"
+    label_name = month + " " + day+ " " + str(x) +"th hour(%)"
     lines.append(go.Scatter(x=num_list, y=count_list, name=label_name))
 
 
@@ -61,7 +61,8 @@ layout = go.Layout(
 )
 
 fig = go.Figure(data=lines, layout=layout)
+file_name = table_name + "x " + str(num_tables) + " hours"
 
-print(py.plot(fig, filename='scatter log from full two hour data'))
+print(py.plot(fig, filename=file_name))
 
 db.close()
