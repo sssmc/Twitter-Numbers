@@ -7,9 +7,13 @@ db = pymysql.connect("localhost", "root", "Climate123", "test")
 c = db.cursor()
 
 lines = []
-table_start_hour = 18
-num_tables = 5
-table_name = "tn_2_2017_10_14_"
+version = int(input("Version: "))
+table_start_hour = input("Table Start Hour: ")
+num_tables = input("Number of Tables: ")
+year = input("Year: ")
+month = input("Month: ")
+day = input("Day: ")
+table_name = "tn_" + version + "_" + year +"_" + month + "_" + day + "_"
 
 def get_total_nums(table_name):
     c.execute("SELECT * FROM " + table_name)
