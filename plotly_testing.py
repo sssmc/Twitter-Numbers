@@ -7,7 +7,7 @@ db = pymysql.connect("localhost", "root", "Climate123", "test")
 c = db.cursor()
 
 lines = []
-version = int(input("Version: "))
+version = input("Version: "))
 table_start_hour = input("Table Start Hour: ")
 num_tables = input("Number of Tables: ")
 year = input("Year: ")
