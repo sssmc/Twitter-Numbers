@@ -7,9 +7,9 @@ db = pymysql.connect("localhost", "root", "Climate123", "test")
 c = db.cursor()
 
 lines = []
-version = input("Version: "))
-table_start_hour = input("Table Start Hour: ")
-num_tables = input("Number of Tables: ")
+version = input("Version: ")
+table_start_hour = int(input("Table Start Hour: "))
+num_tables = int(input("Number of Tables: "))
 year = input("Year: ")
 month = input("Month: ")
 day = input("Day: ")
@@ -62,6 +62,6 @@ layout = go.Layout(
 
 fig = go.Figure(data=lines, layout=layout)
 
-py.plot(fig, filename='scatter log from full two hour data')
+print(py.plot(fig, filename='scatter log from full two hour data'))
 
 db.close()
