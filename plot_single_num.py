@@ -3,7 +3,7 @@ import plotly.graph_objs as go
 import pymysql
 
 
-db = pymysql.connect("localhost", "root", "Climate123", "test")
+db = pymysql.connect("192.168.0.29", "sebastien", "climate", "test")
 c = db.cursor()
 
 lines = []
