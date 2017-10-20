@@ -16,7 +16,10 @@ auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa', 'PaW
 
 queue = []
 
-current_version = 3#must be int
+#tweets tweets_w_nums total_nums non_nums no_data_tweets
+tweet_data = [0,0,0,0,0]
+
+current_version = 4#must be int
 
 print("Twitter Numbers Version: " + str(current_version))
 
@@ -54,11 +57,17 @@ class listener(StreamListener):
 
     def on_data(self, data):
 
+        update_tweet_data(0)
+
         all_data = json.loads(data)
 
         pro_l = process_tweet(all_data)
 
+        if len(pro_l) != 0:
+            update_tweet_data(1)
+
         for s in pro_l:
+            update_tweet_data(2)
             add_to_queue(s)
 
 
@@ -86,10 +95,16 @@ def add_to_queue(num):
     global queue
     queue.append(num)
 
+def update_tweet_data(index):
+    #tweets tweets_w_nums total_nums non_nums no_data_tweets
+    global tweet_data
+    tweet_data[index] += 1
+
 def process_tweet(tweet):
     try:
         pro_tweet_l = re.findall(r'\b\d+\b',tweet["text"])
     except:
+        update_tweet_data(4)
         pro_tweet_l = []
 
     return pro_tweet_l
@@ -109,25 +124,70 @@ def add_to_db(num, current_table_name):
         db.commit()
     except:
         print("Error Skipping")
+        update_tweet_data(3)
 
-def create_table(time):
-    table_name = "tn_" + str(current_version) + "_" + str(time.year) + "_" + str(time.month) + "_" + str(time.day) + "_" + str(time.hour)# + "_" + str(time.minute)
+def create_table(time, is_complete, prv_table_name = ""):
+    table_name = "tn_" + str(current_version) + "_" + str(time.year) + "_" + str(time.month) + "_" + str(time.day) + "_" + str(time.hour)
+    #tweets tweets_w_nums total_nums non_nums no_data_tweets
+    if prv_table_name != "":
+        write_metadata(current_version, table_name, is_complete, tweets=tweet_data[0], tweets_w_nums=tweet_data[1], total_nums=[2], non_nums=tweet_data[3], no_data_tweets=tweet_data[4])
 
     print("Creating Table: " + table_name)
 
     c.execute("CREATE TABLE " + table_name +"(number CHAR(255), count INT)")
 
+    if time.minute == 0:
+        write_metadata(current_version,table_name,1)
+    else:
+        write_metadata(current_version,table_name,0)
+
     db.commit()
     return table_name
+
+def write_metadata(version, table_name, is_complete, tweets=-1, tweets_w_nums=-1, total_nums=-1 , non_nums=-1, no_data_tweets=-1):
+    #table name | complete | total tweets | total tweets with numbers | total numbers | number of differnt numbers | total of non numbers | total of no tweet data
+    #tn_3_2017_10_19_24
+    #000000000000000000000
+
+    metadata_table_name = "tn_" + str(version) + "_metadata"
+
+    dif_nums = c.execute("SELECT * FROM " + table_name)
+
+    print("Writing Metadate for Table: " + table_name)
+    try:
+        c.execute("SELECT * FROM " + metadata_table_name)
+    except:
+        print("Creating Metadata Table: " + metadata_table_name)
+        c.execute("CREATE TABLE " + metadata_table_name+ "(version INT, table_name CHAR(21), is_complete TINYINT(1), tweets INT, tweets_w_nums INT, total_nums INT, dif_nums INT, non_nums INT, no_data_tweets INT)")
+        db.commit()
+
+    if c.execute("select * from tn_4_metadata where table_name like '" + table_name +"'") == 0:
+       print("Creating New Row")
+       c.execute("INSERT INTO " + metadata_table_name + "(version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets))
+    else:
+       print("Updating Row")
+       c.execute("UPDATE " + metadata_table_name + " SET version=%s, table_name=%s, is_complete=%s, tweets=%s, tweets_w_nums=%s, total_nums=%s, dif_nums=%s, non_nums=%s, no_data_tweets=%s", (version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets))
+
+
+    #c.execute("INSERT INTO " + metadata_table_name + "(table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets))
+
+    db.commit()
+
 
 def main_loop():
     current_time = datetime.datetime.utcnow()
     table_start_hour = current_time.hour
     try:
-        current_table_name = create_table(current_time)
+        if current_time.minute == 0:
+            current_table_name = create_table(current_time, 1)
+            is_complete = 1
+        else:
+            current_table_name = create_table(current_time, 0)
+            is_complete = 0
     except pysql.DatabaseError:
         print("database already created")
         current_table_name = "tn_" + str(current_version) + "_" + str(current_time.year) + "_" + str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour)
+        write_metadata(current_version, current_table_name,0)
         pass
 
     try:
@@ -137,7 +197,9 @@ def main_loop():
             if current_time.hour != table_start_hour:
                 print("creating new table")
                 try:
-                    current_table_name = create_table(current_time)
+                    old_table_name = current_table_name
+                    current_table_name = create_table(current_time,is_complete, prv_table_name=old_table_name)
+                    is_complete = 1
                 except pysql.DatabaseError:
                     print("database already created(in loop)")
                     current_table_name = "tn_" + str(current_version) + "_" + str(current_time.year) + "_" + str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour)
