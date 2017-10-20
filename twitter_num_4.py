@@ -129,12 +129,13 @@ def add_to_db(num, current_table_name):
 def create_table(time, is_complete, prv_table_name = ""):
     table_name = "tn_" + str(current_version) + "_" + str(time.year) + "_" + str(time.month) + "_" + str(time.day) + "_" + str(time.hour)
     #tweets tweets_w_nums total_nums non_nums no_data_tweets
-    if prv_table_name != "":
-        write_metadata(current_version, table_name, is_complete, tweets=tweet_data[0], tweets_w_nums=tweet_data[1], total_nums=tweet_data[2], non_nums=tweet_data[3], no_data_tweets=tweet_data[4])
 
     print("Creating Table: " + table_name)
 
     c.execute("CREATE TABLE " + table_name +"(number CHAR(255), count INT)")
+
+    if prv_table_name != "":
+        write_metadata(current_version, table_name, is_complete, tweets=tweet_data[0], tweets_w_nums=tweet_data[1], total_nums=tweet_data[2], non_nums=tweet_data[3], no_data_tweets=tweet_data[4])
 
     if time.minute == 0:
         write_metadata(current_version,table_name,1)
@@ -166,7 +167,7 @@ def write_metadata(version, table_name, is_complete, tweets=-1, tweets_w_nums=-1
        c.execute("INSERT INTO " + metadata_table_name + "(version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets))
     else:
        print("Updating Row")
-       c.execute("UPDATE " + metadata_table_name + " SET version=%s, table_name=%s, is_complete=%s, tweets=%s, tweets_w_nums=%s, total_nums=%s, dif_nums=%s, non_nums=%s, no_data_tweets=%s", (version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets))
+       c.execute("UPDATE " + metadata_table_name + " SET version=%s, table_name=%s, is_complete=%s, tweets=%s, tweets_w_nums=%s, total_nums=%s, dif_nums=%s, non_nums=%s, no_data_tweets=%s WHERE table_name=%s", (version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets, table_name))
 
 
     #c.execute("INSERT INTO " + metadata_table_name + "(table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets))
@@ -188,6 +189,7 @@ def main_loop():
         print("database already created")
         current_table_name = "tn_" + str(current_version) + "_" + str(current_time.year) + "_" + str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour)
         write_metadata(current_version, current_table_name,0)
+        is_complete = 0
         pass
 
     try:
@@ -200,8 +202,9 @@ def main_loop():
                     old_table_name = current_table_name
                     current_table_name = create_table(current_time,is_complete, prv_table_name=old_table_name)
                     is_complete = 1
-                except pysql.DatabaseError:
+                except pysql.DatabaseError as error:
                     print("database already created(in loop)")
+                    print("error: " + str(error))
                     current_table_name = "tn_" + str(current_version) + "_" + str(current_time.year) + "_" + str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour)
                 table_start_hour = current_time.hour
 
