@@ -130,7 +130,7 @@ def create_table(time, is_complete, prv_table_name = ""):
     table_name = "tn_" + str(current_version) + "_" + str(time.year) + "_" + str(time.month) + "_" + str(time.day) + "_" + str(time.hour)
     #tweets tweets_w_nums total_nums non_nums no_data_tweets
     if prv_table_name != "":
-        write_metadata(current_version, table_name, is_complete, tweets=tweet_data[0], tweets_w_nums=tweet_data[1], total_nums=[2], non_nums=tweet_data[3], no_data_tweets=tweet_data[4])
+        write_metadata(current_version, table_name, is_complete, tweets=tweet_data[0], tweets_w_nums=tweet_data[1], total_nums=tweet_data[2], non_nums=tweet_data[3], no_data_tweets=tweet_data[4])
 
     print("Creating Table: " + table_name)
 
