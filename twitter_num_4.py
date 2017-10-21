@@ -126,7 +126,7 @@ def add_to_db(num, current_table_name):
         print("Error Skipping")
         update_tweet_data(3)
 
-def create_table(time, is_complete, prv_table_name = ""):
+def create_table(time, is_complete, prv_table_name = "", old_table_name=""):
     table_name = "tn_" + str(current_version) + "_" + str(time.year) + "_" + str(time.month) + "_" + str(time.day) + "_" + str(time.hour)
     #tweets tweets_w_nums total_nums non_nums no_data_tweets
 
@@ -134,8 +134,10 @@ def create_table(time, is_complete, prv_table_name = ""):
 
     c.execute("CREATE TABLE " + table_name +"(number CHAR(255), count INT)")
 
-    if prv_table_name != "":
-        write_metadata(current_version, table_name, is_complete, tweets=tweet_data[0], tweets_w_nums=tweet_data[1], total_nums=tweet_data[2], non_nums=tweet_data[3], no_data_tweets=tweet_data[4])
+    if prv_table_name != "" and old_table_name != "":
+        print("Writing Tweet Data: " + str(tweet_data) + " for table :" + old_table_name)
+        write_metadata(current_version, old_table_name, is_complete, tweets=tweet_data[0], tweets_w_nums=tweet_data[1], total_nums=tweet_data[2], non_nums=tweet_data[3], no_data_tweets=tweet_data[4])
+
 
     if time.minute == 0:
         write_metadata(current_version,table_name,1)
@@ -151,6 +153,12 @@ def write_metadata(version, table_name, is_complete, tweets=-1, tweets_w_nums=-1
     #000000000000000000000
 
     metadata_table_name = "tn_" + str(version) + "_metadata"
+
+    print(tweets)
+    print(tweets_w_nums)
+    print(total_nums)
+    print(non_nums)
+    print(no_data_tweets)
 
     dif_nums = c.execute("SELECT * FROM " + table_name)
 
@@ -200,7 +208,7 @@ def main_loop():
                 print("creating new table")
                 try:
                     old_table_name = current_table_name
-                    current_table_name = create_table(current_time,is_complete, prv_table_name=old_table_name)
+                    current_table_name = create_table(current_time,is_complete, prv_table_name=old_table_name, old_table_name=old_table_name)
                     is_complete = 1
                 except pysql.DatabaseError as error:
                     print("database already created(in loop)")
