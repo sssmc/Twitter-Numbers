@@ -230,7 +230,7 @@ def main_loop():
         print("closing database")
         db.close()
 
-db = pysql.connect("localhost", "root", "Climate123", "test")
+db = pysql.connect("192.168.0.29", "sebastien", "climate", "test")
 c = db.cursor()
 
 # Create new threads
