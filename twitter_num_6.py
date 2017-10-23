@@ -19,7 +19,7 @@ queue = []
 #tweets tweets_w_nums total_nums non_nums no_data_tweets
 tweet_data = [0,0,0,0,0]
 
-current_version = 5#must be int
+current_version = 6#must be int
 
 print("Twitter Numbers Version: " + str(current_version))
 
@@ -153,12 +153,6 @@ def write_metadata(version, table_name, is_complete, tweets=-1, tweets_w_nums=-1
     #000000000000000000000
 
     metadata_table_name = "tn_" + str(version) + "_metadata"
-
-    print(tweets)
-    print(tweets_w_nums)
-    print(total_nums)
-    print(non_nums)
-    print(no_data_tweets)
 
     dif_nums = c.execute("SELECT * FROM " + table_name)
 
