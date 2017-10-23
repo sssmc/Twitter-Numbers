@@ -129,6 +129,7 @@ def add_to_db(num, current_table_name):
 def create_table(time, is_complete, prv_table_name = "", old_table_name=""):
     table_name = "tn_" + str(current_version) + "_" + str(time.year) + "_" + str(time.month) + "_" + str(time.day) + "_" + str(time.hour)
     #tweets tweets_w_nums total_nums non_nums no_data_tweets
+    global tweet_data
 
     print("Creating Table: " + table_name)
 
