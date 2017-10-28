@@ -5,7 +5,7 @@ import time
 import datetime
 import threading
 
-import pymysql as pysql
+import pymysql
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 
@@ -168,7 +168,9 @@ def write_metadata(version,
                    total_nums=-1 ,
                    non_nums=-1,
                    no_data_tweets=-1):
-    #table name | complete | total tweets | total tweets with numbers | total numbers | number of differnt numbers | total of non numbers | total of no tweet data
+    #table name | complete | total tweets | total tweets with numbers
+    #| total numbers | number of differnt numbers | total of non numbers
+    #| total of no tweet data
     #tn_3_2017_10_19_24
     #000000000000000000000
     metadata_table_name = "tn_" + str(version) + "_metadata"
@@ -224,7 +226,7 @@ def main_loop():
         else:
             current_table_name = create_table(current_time, 0)
             is_complete = 0
-    except pysql.DatabaseError:
+    except pymysql.DatabaseError:
         print("database already created")
         current_table_name = "tn_" + str(current_version) + "_" + str(current_time.year) + "_" + str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour)
         write_metadata(current_version, current_table_name,0)
@@ -243,7 +245,7 @@ def main_loop():
                                                       prv_table_name=old_table_name,
                                                       old_table_name=old_table_name)
                     is_complete = 1
-                except pysql.DatabaseError as error:
+                except pymysql.DatabaseError as error:
                     print("database already created(in loop)")
                     print("error: " + str(error))
                     current_table_name = "tn_" + str(current_version) + "_" + str(current_time.year) + "_" + str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour)
@@ -262,7 +264,7 @@ def main_loop():
         print("closing database")
         db.close()
 
-db = pysql.connect("localhost", "root", "Climate123", "test")
+db = pymysql.connect("localhost", "root", "Climate123", "test")
 c = db.cursor()
 # Create new threads
 thread1 = myThread(1, "Thread_main_loop", 1)
