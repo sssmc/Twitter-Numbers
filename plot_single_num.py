@@ -1,7 +1,8 @@
+import datetime
+
 import plotly.plotly as py
 import plotly.graph_objs as go
 import pymysql
-
 
 db = pymysql.connect("192.168.0.29", "sebastien", "climate", "test")
 c = db.cursor()
@@ -13,7 +14,6 @@ num_tables = int(input("Number of Tables: "))
 year = input("Year: ")
 month = input("Month: ")
 day = input("Day: ")
-table_name = "tn_" + version + "_" + year +"_" + month + "_" + day + "_"
 num = int(input("Number To Plot: "))
 
 def get_total_nums(table_name):
@@ -29,12 +29,14 @@ def get_total_nums(table_name):
 
 tables_l = []
 counts_l = []
+start_datetime = datetime.datetime(int(year),int(month),int(day),int(table_start_hour))
 for x in range(table_start_hour, table_start_hour + num_tables):
-    print(table_name + str(x))
-    total_nums = get_total_nums(table_name + str(x))
+    loop_datetime = start_datetime + datetime.timedelta(hours=x)
+    table_name = "tn_" + version + "_" + str(loop_datetime.year) +"_" + str(loop_datetime.month) + "_" + str(loop_datetime.day) + "_" + str(loop_datetime.hour)
+    total_nums = get_total_nums(table_name)
     tables_l.append(x)
 
-    c.execute("SELECT * FROM " + table_name + str(x) + " WHERE number LIKE %s", (num))
+    c.execute("SELECT * FROM " + table_name + " WHERE number LIKE %s", (num))
 
     counts_l.append((c.fetchone()[1] / total_nums) * 100)
 
