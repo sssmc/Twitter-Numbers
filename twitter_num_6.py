@@ -9,8 +9,10 @@ import pymysql as pysql
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 
-auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB', 'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
-auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa', 'PaWOAasOFoPFDdYMARVr31mK1iy35sOqhZzpr1fDmNkZX')
+auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB',
+                    'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
+auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa',
+                      'PaWOAasOFoPFDdYMARVr31mK1iy35sOqhZzpr1fDmNkZX')
 #tweets tweets_w_nums total_nums non_nums no_data_tweets
 queue = []
 tweet_data = [0,0,0,0,0]
@@ -82,7 +84,9 @@ class listener(StreamListener):
         else:
             sleepy = 5
             print(time.strftime("%Y%m%d_%H%M%S"))
-            print ("A reconnection attempt will occur in " + str(sleepy) + " seconds.")
+            print ("A reconnection attempt will occur in "
+                    + str(sleepy)
+                    + " seconds.")
             time.sleep(sleepy)
 
         return True
@@ -106,14 +110,24 @@ def process_tweet(tweet):
 
 def add_to_db(num, current_table_name):
     try:
-        if c.execute("SELECT * FROM " + current_table_name + " WHERE number LIKE %s", (num)) == 0:
-            c.execute("INSERT INTO " + current_table_name + " (number,count) VALUES (%s,1)", (num))
+        if c.execute("SELECT * FROM "
+                      + current_table_name
+                      + " WHERE number LIKE %s", (num)) == 0:
+            c.execute("INSERT INTO "
+                       + current_table_name
+                       + " (number,count) VALUES (%s,1)", (num))
         else:
-            c.execute("SELECT count From " + current_table_name + " WHERE number LIKE %s", (num))
-            c.execute("SELECT count From " + current_table_name + " WHERE number LIKE %s", (num))
+            c.execute("SELECT count From "
+                       + current_table_name
+                       + " WHERE number LIKE %s", (num))
+            c.execute("SELECT count From "
+                       + current_table_name
+                       + " WHERE number LIKE %s", (num))
             new_count = int(c.fetchone()[0])
             new_count += 1
-            c.execute("UPDATE " + current_table_name + " SET count='%s' WHERE number LIKE %s", (new_count,num))
+            c.execute("UPDATE "
+                    + current_table_name
+                    + " SET count='%s' WHERE number LIKE %s", (new_count,num))
         db.commit()
     except:
         print("Error Skipping")
@@ -126,8 +140,17 @@ def create_table(time, is_complete, prv_table_name = "", old_table_name=""):
     print("Creating Table: " + table_name)
     c.execute("CREATE TABLE " + table_name +"(number CHAR(255), count INT)")
     if prv_table_name != "" and old_table_name != "":
-        print("Writing Tweet Data: " + str(tweet_data) + " for table :" + old_table_name)
-        write_metadata(current_version, old_table_name, is_complete, tweets=tweet_data[0], tweets_w_nums=tweet_data[1], total_nums=tweet_data[2], non_nums=tweet_data[3], no_data_tweets=tweet_data[4])
+        print("Writing Tweet Data: "
+               + str(tweet_data)
+               + " for table :"
+               + old_table_name)
+        write_metadata(current_version,
+                       old_table_name, is_complete,
+                       tweets=tweet_data[0],
+                       tweets_w_nums=tweet_data[1],
+                       total_nums=tweet_data[2],
+                       non_nums=tweet_data[3],
+                       no_data_tweets=tweet_data[4])
         tweet_data = [0,0,0,0,0]
     if time.minute == 0:
         write_metadata(current_version,table_name,1)
@@ -137,7 +160,14 @@ def create_table(time, is_complete, prv_table_name = "", old_table_name=""):
     db.commit()
     return table_name
 
-def write_metadata(version, table_name, is_complete, tweets=-1, tweets_w_nums=-1, total_nums=-1 , non_nums=-1, no_data_tweets=-1):
+def write_metadata(version,
+                   table_name,
+                   is_complete,
+                   tweets=-1,
+                   tweets_w_nums=-1,
+                   total_nums=-1 ,
+                   non_nums=-1,
+                   no_data_tweets=-1):
     #table name | complete | total tweets | total tweets with numbers | total numbers | number of differnt numbers | total of non numbers | total of no tweet data
     #tn_3_2017_10_19_24
     #000000000000000000000
@@ -148,8 +178,8 @@ def write_metadata(version, table_name, is_complete, tweets=-1, tweets_w_nums=-1
         c.execute("SELECT * FROM " + metadata_table_name)
     except:
         print("Creating Metadata Table: " + metadata_table_name)
-        c.execute("CREATE TABLE " 
-            + metadata_table_name 
+        c.execute("CREATE TABLE "
+            + metadata_table_name
             + "(version INT, table_name CHAR(21), "
             "is_complete TINYINT(1), tweets INT, "
             "tweets_w_nums INT, "
@@ -159,9 +189,25 @@ def write_metadata(version, table_name, is_complete, tweets=-1, tweets_w_nums=-1
             "no_data_tweets INT)")
         db.commit()
 
-    if c.execute("select * from " + metadata_table_name + " where table_name like '" + table_name +"'") == 0:
+    if c.execute("select * from "
+                 + metadata_table_name
+                 + " where table_name like '"
+                 + table_name +"'") == 0:
        print("Creating New Row")
-       c.execute("INSERT INTO " + metadata_table_name + "(version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)", (version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets))
+       c.execute("INSERT INTO "
+                  + metadata_table_name
+                  + "(version, table_name, is_complete, tweets, tweets_w_nums,"
+                  " total_nums, dif_nums, non_nums, no_data_tweets)"
+                  " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                  (version,
+                  table_name,
+                  is_complete,
+                  tweets,
+                  tweets_w_nums,
+                  total_nums,
+                  dif_nums,
+                  non_nums,
+                  no_data_tweets))
     else:
        print("Updating Row")
        c.execute("UPDATE " + metadata_table_name + " SET version=%s, table_name=%s, is_complete=%s, tweets=%s, tweets_w_nums=%s, total_nums=%s, dif_nums=%s, non_nums=%s, no_data_tweets=%s WHERE table_name=%s", (version, table_name, is_complete, tweets, tweets_w_nums, total_nums, dif_nums, non_nums, no_data_tweets, table_name))
@@ -192,7 +238,10 @@ def main_loop():
                 print("creating new table")
                 try:
                     old_table_name = current_table_name
-                    current_table_name = create_table(current_time,is_complete, prv_table_name=old_table_name, old_table_name=old_table_name)
+                    current_table_name = create_table(current_time,
+                                                      is_complete,
+                                                      prv_table_name=old_table_name,
+                                                      old_table_name=old_table_name)
                     is_complete = 1
                 except pysql.DatabaseError as error:
                     print("database already created(in loop)")
