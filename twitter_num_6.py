@@ -257,12 +257,13 @@ def main_loop():
             is_complete = 0
     except pymysql.DatabaseError:
         print("database already created")
-        current_table_name = "tn_"
-        + str(current_version)
-        + "_" + str(current_time.year)
-        + "_" + str(current_time.month)
-        + "_" + str(current_time.day)
-        + "_" + str(current_time.hour)
+        logging.info("Table Already Created")
+        current_table_name = "tn_" \
+            + str(current_version) \
+            + "_" + str(current_time.year) \
+            + "_" + str(current_time.month) \
+            + "_" + str(current_time.day) \
+            + "_" + str(current_time.hour)
         write_metadata(current_version, current_table_name, 0)
         is_complete = 0
         pass
@@ -282,13 +283,14 @@ def main_loop():
                 except pymysql.DatabaseError as error:
                     print("database already created(in loop)")
                     print("error: " + str(error))
-                    current_table_name = "tn_"
-                    + str(current_version)
-                    + "_" + str(current_time.year)
-                    + "_" + str(current_time.month)
-                    + "_" + str(current_time.day)
-                    + "_"
-                    + str(current_time.hour)
+                    logging.info("Table Already Created(loop)")
+                    current_table_name = "tn_" \
+                        + str(current_version) \
+                        + "_" + str(current_time.year) \
+                        + "_" + str(current_time.month) \
+                        + "_" + str(current_time.day) \
+                        + "_" \
+                        + str(current_time.hour)
                 table_start_hour = current_time.hour
             if(len(queue) > 0):
                 num = str(queue[0])
