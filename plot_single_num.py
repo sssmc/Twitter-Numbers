@@ -16,6 +16,7 @@ month = input("Month: ")
 day = input("Day: ")
 num = int(input("Number To Plot: "))
 
+
 def get_total_nums(table_name):
     c.execute("SELECT * FROM " + table_name)
     all_list = c.fetchall()
@@ -27,12 +28,21 @@ def get_total_nums(table_name):
     print("Total Numbers: " + str(total_nums))
     return total_nums
 
+
 tables_l = []
 counts_l = []
-start_datetime = datetime.datetime(int(year),int(month),int(day),int(table_start_hour))
+start_datetime = datetime.datetime(int(year),
+                                   int(month),
+                                   int(day),
+                                   int(table_start_hour))
 for x in range(table_start_hour, table_start_hour + num_tables):
     loop_datetime = start_datetime + datetime.timedelta(hours=x)
-    table_name = "tn_" + version + "_" + str(loop_datetime.year) +"_" + str(loop_datetime.month) + "_" + str(loop_datetime.day) + "_" + str(loop_datetime.hour)
+    table_name = "tn_" \
+        + version + "_" \
+        + str(loop_datetime.year) \
+        + "_" + str(loop_datetime.month) \
+        + "_" + str(loop_datetime.day) \
+        + "_" + str(loop_datetime.hour)
     total_nums = get_total_nums(table_name)
     tables_l.append(x)
 
@@ -41,9 +51,7 @@ for x in range(table_start_hour, table_start_hour + num_tables):
     counts_l.append((c.fetchone()[1] / total_nums) * 100)
 
 
-
-
-label_name = month + " " + day+ " " + str(x) +"th hour for: " + str(num)
+label_name = month + " " + day + " " + str(x) + "th hour for: " + str(num)
 lines.append(go.Scatter(x=tables_l, y=counts_l, name=label_name))
 
 layout = go.Layout(
