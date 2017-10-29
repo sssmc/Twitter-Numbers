@@ -4,20 +4,26 @@ import math
 import time
 import datetime
 import threading
+import logging
 
 import pymysql
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 
+current_version = 7  # must be int
 auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB',
                     'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
 auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa',
                       'PaWOAasOFoPFDdYMARVr31mK1iy35sOqhZzpr1fDmNkZX')
+
+logging.basicConfig(filename='tn_' + str(current_version) + '.log',
+                    level=logging.INFO,
+                    format="%(asctime)s:%(levelname)s:%(message)s")
 # tweets tweets_w_nums total_nums non_nums no_data_tweets
 queue = []
 tweet_data = [0, 0, 0, 0, 0]
-current_version = 6  # must be int
-# debug
+
+logging.info("Starting Twitter Numbers Version: " + str(current_version))
 print("Twitter Numbers Version: " + str(current_version))
 
 
@@ -39,12 +45,14 @@ class myThread (threading.Thread):
             while True:
                 try:
                     print("Start Streaming")
+                    logging.info("Start Streaming")
                     twitterStream = Stream(auth, listener())
                     twitterStream.sample()
                 except Exception as e:
                     print("Error. Restarting Stream.... Error: ")
                     print(e.__doc__)
                     print("Error Message")
+                    logging.error("Streaming Error: " + str(e.__doc__))
                     time.sleep(5)
             print("Streaming Thread Ending")
 
@@ -73,11 +81,13 @@ class listener(StreamListener):
 
     def on_error(self, status):
         print("error code: " + str(status))
+        logging.error("Stream Connection Error: " + str(status))
         if status == 420:
             sleep_time = 60 * math.pow(2, self.rec_tries_420)
             print(time.strftime("%Y%m%d_%H%M%S"))
             print("Recnnecting in: ")
             print(str(sleep_time / 60) + " minutes")
+            logging.info("Reconnecting in: " + str(sleep_time / 60) + "minutes")
             print("'''")
             time.sleep(sleep_time)
             self.rec_tries_420 += 1
@@ -87,6 +97,7 @@ class listener(StreamListener):
             print("A reconnection attempt will occur in "
                   + str(sleepy)
                   + " seconds.")
+            logging.info("Reconnecting in: " + str(sleepy))
             time.sleep(sleepy)
 
         return True
@@ -146,6 +157,7 @@ def create_table(time, is_complete, prv_table_name="", old_table_name=""):
     global tweet_data
     print("Creating Table: " + table_name)
     c.execute("CREATE TABLE " + table_name + "(number CHAR(255), count INT)")
+    logging.info("Creating Table: " + table_name)
     if prv_table_name != "" and old_table_name != "":
         print("Writing Tweet Data: "
               + str(tweet_data)
@@ -184,10 +196,12 @@ def write_metadata(version,
     metadata_table_name = "tn_" + str(version) + "_metadata"
     dif_nums = c.execute("SELECT * FROM " + table_name)
     print("Writing Metadate for Table: " + table_name)
+    logging.info("Writing Metadate for Table: " + table_name)
     try:
         c.execute("SELECT * FROM " + metadata_table_name)
     except:
         print("Creating Metadata Table: " + metadata_table_name)
+        logging.info("Creating Metadata Table: " + metadata_table_name)
         c.execute("CREATE TABLE "
                   + metadata_table_name
                   + "(version INT, table_name CHAR(21), "
