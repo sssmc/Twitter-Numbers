@@ -48,11 +48,14 @@ class myThread (threading.Thread):
                     logging.info("Start Streaming")
                     twitterStream = Stream(auth, listener())
                     twitterStream.sample()
+
                 except Exception as e:
                     print("Error. Restarting Stream.... Error: ")
                     print(e.__doc__)
                     print("Error Message")
-                    logging.error("Streaming Error: " + str(e.__doc__))
+                    logging.error("Streaming Error: "
+                                  + str(e)
+                                  + ": " + str(e.__doc__))
                     time.sleep(5)
             print("Streaming Thread Ending")
 
@@ -87,7 +90,9 @@ class listener(StreamListener):
             print(time.strftime("%Y%m%d_%H%M%S"))
             print("Recnnecting in: ")
             print(str(sleep_time / 60) + " minutes")
-            logging.info("Reconnecting in: " + str(sleep_time / 60) + "minutes")
+            logging.info("Reconnecting in: "
+                         + str(sleep_time / 60)
+                         + "minutes")
             print("'''")
             time.sleep(sleep_time)
             self.rec_tries_420 += 1
@@ -145,9 +150,10 @@ def add_to_db(num, current_table_name):
                       + " SET count='%s' WHERE number LIKE %s",
                       (new_count, num))
         db.commit()
-    except:
-        print("Error Skipping")
+    except UnicodeEncodeError as e:
+        print("Error Skipping: " + str(e))
         update_tweet_data(3)
+        pass
 
 
 def create_table(time, is_complete, prv_table_name="", old_table_name=""):
@@ -199,7 +205,7 @@ def write_metadata(version,
     logging.info("Writing Metadate for Table: " + table_name)
     try:
         c.execute("SELECT * FROM " + metadata_table_name)
-    except:
+    except pymysql.DatabaseError:
         print("Creating Metadata Table: " + metadata_table_name)
         logging.info("Creating Metadata Table: " + metadata_table_name)
         c.execute("CREATE TABLE "
@@ -270,7 +276,7 @@ def main_loop():
             current_table_name = create_table(current_time, 0)
             is_complete = 0
     except pymysql.DatabaseError:
-        print("database already created")
+        print("table already created")
         logging.info("Table Already Created")
         current_table_name = "tn_" \
             + str(current_version) \
