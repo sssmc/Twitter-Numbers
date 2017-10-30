@@ -127,6 +127,11 @@ def process_tweet(tweet):
         for n in range(0, len(pro_tweet_l)):
             pro_tweet_l[n] = str(pro_tweet_l[n])
             pro_tweet_l[n] = pro_tweet_l[n].replace(",", "")
+            if pro_tweet_l[n][len(pro_tweet_l[n]) - 1] == '.':
+                pro_tweet_l[n] = pro_tweet_l[n][:-1]
+            if '.' in pro_tweet_l[n]:
+                pro_tweet_l[n] = float(pro_tweet_l[n])
+                pro_tweet_l[n] = str(pro_tweet_l[n])
     except:
         update_tweet_data(4)
         pro_tweet_l = []
@@ -300,10 +305,11 @@ def main_loop():
                 print("creating new table")
                 try:
                     old_table_name = current_table_name
-                    current_table_name = create_table(current_time,
-                                                      is_complete,
-                                                      prv_table_name=old_table_name,
-                                                      old_table_name=old_table_name)
+                    current_table_name = \
+                        create_table(current_time,
+                                     is_complete,
+                                     prv_table_name=old_table_name,
+                                     old_table_name=old_table_name)
                     is_complete = 1
                 except pymysql.DatabaseError as error:
                     print("database already created(in loop)")
@@ -318,14 +324,13 @@ def main_loop():
                         + str(current_time.hour)
                 table_start_hour = current_time.hour
             if(len(queue) > 0):
+                #print("Number: " + queue[0])
                 num = str(queue[0])
-
-                if num.isdigit():
-                    print("Number: " + num)
-                    add_to_db(num, current_table_name)
-                else:
-                    print("Not a number: " + num)
+                add_to_db(num, current_table_name)
                 del queue[0]
+                if len(queue) > 5:
+                    print("Queue Length High: " + str(len(queue)))
+                    logging.warning("Queue Length High: " + str(len(queue)))
                 # print(len(queue))
     except KeyboardInterrupt:
         print("closing database")
