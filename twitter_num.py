@@ -10,7 +10,7 @@ import pymysql
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 
-current_version = 7  # must be int
+current_version = 8  # must be int
 auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB',
                     'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
 auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa',
@@ -121,7 +121,12 @@ def update_tweet_data(index):
 
 def process_tweet(tweet):
     try:
-        pro_tweet_l = re.findall(r'\b\d+\b', tweet["text"])
+        # pro_tweet_l = re.findall(r'\b\d+\b', tweet["text"])
+        pro_tweet_l = re.findall('[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?',
+                                 tweet["text"])
+        for n in range(0, len(pro_tweet_l)):
+            pro_tweet_l[n] = str(pro_tweet_l[n])
+            pro_tweet_l[n] = pro_tweet_l[n].replace(",", "")
     except:
         update_tweet_data(4)
         pro_tweet_l = []
