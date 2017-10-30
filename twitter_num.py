@@ -66,20 +66,25 @@ class listener(StreamListener):
         self.path = path
         self.rec_tries_420 = 0
         self.rec_tries_other = 0
+        self.data_count = 0
 
     def on_data(self, data):
 
-        update_tweet_data(0)
+        if self.data_count == 0:
+            update_tweet_data(0)
 
-        all_data = json.loads(data)
+            all_data = json.loads(data)
 
-        pro_l = process_tweet(all_data)
+            pro_l = process_tweet(all_data)
 
-        if len(pro_l) != 0:
-            update_tweet_data(1)
-        for s in pro_l:
-            update_tweet_data(2)
-            add_to_queue(s)
+            if len(pro_l) != 0:
+                update_tweet_data(1)
+            for s in pro_l:
+                update_tweet_data(2)
+                add_to_queue(s)
+            self.data_count = 1
+        else:
+            self.data_count -= 1
         return(True)
 
     def on_error(self, status):
@@ -324,11 +329,11 @@ def main_loop():
                         + str(current_time.hour)
                 table_start_hour = current_time.hour
             if(len(queue) > 0):
-                #print("Number: " + queue[0])
+                print("Number: " + queue[0])
                 num = str(queue[0])
                 add_to_db(num, current_table_name)
                 del queue[0]
-                if len(queue) > 5:
+                if len(queue) > 50:
                     print("Queue Length High: " + str(len(queue)))
                     logging.warning("Queue Length High: " + str(len(queue)))
                 # print(len(queue))
