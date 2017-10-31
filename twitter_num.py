@@ -343,7 +343,6 @@ def main_loop():
                     print("Queue Length Under 90")
                     logging.warning("Queue Length Under 90")
                     queue_len_warning = False
-                    # print(len(queue))
     except KeyboardInterrupt:
         print("closing database")
         db.close()
