@@ -10,7 +10,7 @@ import pymysql
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 
-current_version = 8  # must be int
+current_version = 9  # must be int
 auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB',
                     'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
 auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa',
@@ -22,6 +22,14 @@ logging.basicConfig(filename='tn_' + str(current_version) + '.log',
 # tweets tweets_w_nums total_nums non_nums no_data_tweets
 queue = []
 tweet_data = [0, 0, 0, 0, 0]
+database_latency_min = -1
+database_latency_max = 0
+database_latency_avg_sum = 0
+database_latency_num = 1
+processing_latency_min = -1
+processing_latency_max = 0
+processing_latency_avg_sum = 0
+processing_latency_num = 1
 
 logging.info("Starting Twitter Numbers Version: " + str(current_version))
 print("Twitter Numbers Version: " + str(current_version))
@@ -71,6 +79,7 @@ class listener(StreamListener):
     def on_data(self, data):
 
         if self.data_count == 0:
+            d1 = datetime.datetime.now()
             update_tweet_data(0)
 
             all_data = json.loads(data)
@@ -83,6 +92,9 @@ class listener(StreamListener):
                 update_tweet_data(2)
                 add_to_queue(s)
             self.data_count = 2
+            d2 = datetime.datetime.now()
+            processing_latency((d2 - d1).microseconds)
+            # print((d2 - d1))
         else:
             self.data_count -= 1
         return(True)
@@ -122,6 +134,36 @@ def update_tweet_data(index):
     # tweets tweets_w_nums total_nums non_nums no_data_tweets
     global tweet_data
     tweet_data[index] += 1
+
+
+def database_latency(time):
+    global database_latency_min
+    global database_latency_max
+    global database_latency_avg_sum
+    global database_latency_num
+    database_latency_num += 1
+    database_latency_avg_sum += time
+    if processing_latency_min == -1:
+        database_latency_min = time
+    elif time < database_latency_min:
+        database_latency_min = time
+    if time > database_latency_max:
+        database_latency_max = time
+
+
+def processing_latency(time):
+    global processing_latency_min
+    global processing_latency_max
+    global processing_latency_avg_sum
+    global processing_latency_num
+    processing_latency_num += 1
+    processing_latency_avg_sum += time
+    if processing_latency_min == -1:
+        processing_latency_min = time
+    elif time < processing_latency_min:
+        processing_latency_min = time
+    if time > processing_latency_max:
+        processing_latency_max = time
 
 
 def process_tweet(tweet):
@@ -176,6 +218,14 @@ def create_table(time, is_complete, prv_table_name="", old_table_name=""):
         str(time.month) + "_" + str(time.day) + "_" + str(time.hour)
     # tweets tweets_w_nums total_nums non_nums no_data_tweets
     global tweet_data
+    global processing_latency_min
+    global processing_latency_max
+    global processing_latency_avg_sum
+    global processing_latency_num
+    global database_latency_min
+    global database_latency_max
+    global database_latency_avg_sum
+    global database_latency_num
     print("Creating Table: " + table_name)
     c.execute("CREATE TABLE " + table_name + "(number CHAR(255), count INT)")
     logging.info("Creating Table: " + table_name)
@@ -192,6 +242,14 @@ def create_table(time, is_complete, prv_table_name="", old_table_name=""):
                        non_nums=tweet_data[3],
                        no_data_tweets=tweet_data[4])
         tweet_data = [0, 0, 0, 0, 0]
+        database_latency_min = -1
+        database_latency_max = 0
+        database_latency_avg_sum = 0
+        database_latency_num = 1
+        processing_latency_min = -1
+        processing_latency_max = 0
+        processing_latency_avg_sum = 0
+        processing_latency_num = 1
     if time.minute == 0:
         write_metadata(current_version, table_name, 1)
     else:
@@ -211,11 +269,15 @@ def write_metadata(version,
                    no_data_tweets=-1):
     # table name | complete | total tweets | total tweets with numbers
     # | total numbers | number of differnt numbers | total of non numbers
-    # | total of no tweet data
+    # | total of no tweet data | processing_latency_min | processing_latency_max
+    # | processing_latency_avg | database_latency_min database_latency_max
+    # | database_latency_avg
     # tn_3_2017_10_19_24
     # 000000000000000000000
     metadata_table_name = "tn_" + str(version) + "_metadata"
     dif_nums = c.execute("SELECT * FROM " + table_name)
+    database_latency_avg = database_latency_avg_sum / database_latency_num
+    processing_latency_avg = processing_latency_avg_sum / processing_latency_num
     print("Writing Metadate for Table: " + table_name)
     logging.info("Writing Metadate for Table: " + table_name)
     try:
@@ -231,7 +293,13 @@ def write_metadata(version,
                   "total_nums INT, "
                   "dif_nums INT, "
                   "non_nums INT, "
-                  "no_data_tweets INT)")
+                  "no_data_tweets INT, "
+                  "processing_latency_min INT, "
+                  "processing_latency_max INT, "
+                  "processing_latency_avg INT, "
+                  "database_latency_min INT, "
+                  "database_latency_max INT, "
+                  "database_latency_avg INT)")
         db.commit()
 
     if c.execute("select * from "
@@ -242,8 +310,11 @@ def write_metadata(version,
         c.execute("INSERT INTO "
                   + metadata_table_name
                   + "(version, table_name, is_complete, tweets, tweets_w_nums,"
-                  " total_nums, dif_nums, non_nums, no_data_tweets)"
-                  " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                  " total_nums, dif_nums, non_nums, no_data_tweets, "
+                  "processing_latency_min, processing_latency_max, "
+                  "processing_latency_avg, database_latency_min, "
+                  "database_latency_max, database_latency_avg)"
+                  " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                   (version,
                     table_name,
                     is_complete,
@@ -252,7 +323,13 @@ def write_metadata(version,
                     total_nums,
                     dif_nums,
                     non_nums,
-                    no_data_tweets))
+                    no_data_tweets,
+                    processing_latency_min,
+                    processing_latency_max,
+                    processing_latency_avg,
+                    database_latency_min,
+                    database_latency_max,
+                    database_latency_avg))
     else:
         print("Updating Row")
         c.execute("UPDATE "
@@ -265,18 +342,30 @@ def write_metadata(version,
                   "total_nums=%s, "
                   "dif_nums=%s, "
                   "non_nums=%s, "
-                  "no_data_tweets=%s "
+                  "no_data_tweets=%s, "
+                  "processing_latency_min=%s, "
+                  "processing_latency_max=%s, "
+                  "processing_latency_avg=%s, "
+                  "database_latency_min=%s, "
+                  "database_latency_max=%s, "
+                  "database_latency_avg=%s "
                   "WHERE table_name=%s",
                   (version,
-                   table_name,
-                   is_complete,
-                   tweets,
-                   tweets_w_nums,
-                   total_nums,
-                   dif_nums,
-                   non_nums,
-                   no_data_tweets,
-                   table_name))
+                    table_name,
+                    is_complete,
+                    tweets,
+                    tweets_w_nums,
+                    total_nums,
+                    dif_nums,
+                    non_nums,
+                    no_data_tweets,
+                    processing_latency_min,
+                    processing_latency_max,
+                    processing_latency_avg,
+                    database_latency_min,
+                    database_latency_max,
+                    database_latency_avg,
+                    table_name))
     # c.execute("INSERT INTO " + metadata_table_name
 
 
@@ -330,9 +419,12 @@ def main_loop():
                 table_start_hour = current_time.hour
             if(len(queue) > 0):
                 print("Number: " + queue[0])
+                d3 = datetime.datetime.now()
                 num = str(queue[0])
                 add_to_db(num, current_table_name)
                 del queue[0]
+                d4 = datetime.datetime.now()
+                database_latency((d4 - d3).microseconds)
                 if len(queue) > 100:
                     if queue_len_warning is False:
                         print("Queue Length Above 100: " + str(len(queue)))
