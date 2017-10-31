@@ -82,7 +82,7 @@ class listener(StreamListener):
             for s in pro_l:
                 update_tweet_data(2)
                 add_to_queue(s)
-            self.data_count = 1
+            self.data_count = 3
         else:
             self.data_count -= 1
         return(True)
@@ -303,8 +303,8 @@ def main_loop():
         is_complete = 0
         pass
     try:
+        queue_len_warning = False
         while True:
-
             current_time = datetime.datetime.utcnow()
             if current_time.hour != table_start_hour:
                 print("creating new table")
@@ -333,10 +333,17 @@ def main_loop():
                 num = str(queue[0])
                 add_to_db(num, current_table_name)
                 del queue[0]
-                if len(queue) > 50:
-                    print("Queue Length High: " + str(len(queue)))
-                    logging.warning("Queue Length High: " + str(len(queue)))
-                # print(len(queue))
+                if len(queue) > 100:
+                    if queue_len_warning is False:
+                        print("Queue Length Above 100: " + str(len(queue)))
+                        logging.warning("Queue Length Above 100: "
+                                        + str(len(queue)))
+                        queue_len_warning = True
+                if len(queue) < 90 and queue_len_warning is True:
+                    print("Queue Length Under 90")
+                    logging.warning("Queue Length Under 90")
+                    queue_len_warning = False
+                    # print(len(queue))
     except KeyboardInterrupt:
         print("closing database")
         db.close()
