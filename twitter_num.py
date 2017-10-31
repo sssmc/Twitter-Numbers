@@ -82,7 +82,7 @@ class listener(StreamListener):
             for s in pro_l:
                 update_tweet_data(2)
                 add_to_queue(s)
-            self.data_count = 3
+            self.data_count = 2
         else:
             self.data_count -= 1
         return(True)
