@@ -143,7 +143,7 @@ def database_latency(time):
     global database_latency_num
     database_latency_num += 1
     database_latency_avg_sum += time
-    if processing_latency_min == -1:
+    if database_latency_min == -1:
         database_latency_min = time
     elif time < database_latency_min:
         database_latency_min = time
