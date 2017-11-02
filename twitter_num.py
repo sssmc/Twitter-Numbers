@@ -20,6 +20,7 @@ logging.basicConfig(filename='tn_' + str(current_version) + '.log',
                     level=logging.INFO,
                     format="%(asctime)s:%(levelname)s:%(message)s")
 # tweets tweets_w_nums total_nums non_nums no_data_tweets
+stream_speed_divider = 2
 queue = []
 tweet_data = [0, 0, 0, 0, 0]
 database_latency_min = -1
@@ -91,7 +92,8 @@ class listener(StreamListener):
             for s in pro_l:
                 update_tweet_data(2)
                 add_to_queue(s)
-            self.data_count = 2
+
+            self.data_count = get_stream_speed_divider()
             d2 = datetime.datetime.now()
             processing_latency((d2 - d1).microseconds)
             # print((d2 - d1))
@@ -123,6 +125,11 @@ class listener(StreamListener):
             time.sleep(sleepy)
 
         return True
+
+
+def get_stream_speed_divider():
+    global stream_speed_divider
+    return stream_speed_divider
 
 
 def add_to_queue(num):
@@ -169,7 +176,8 @@ def processing_latency(time):
 def process_tweet(tweet):
     try:
         # pro_tweet_l = re.findall(r'\b\d+\b', tweet["text"])
-        pro_tweet_l = re.findall('[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?',
+        pro_tweet_l = re.findall('[-+]?[.]?[\d]+(?:,\d\d\d)*'
+                                 '[\.]?\d*(?:[eE][-+]?\d+)?',
                                  tweet["text"])
         for n in range(0, len(pro_tweet_l)):
             pro_tweet_l[n] = str(pro_tweet_l[n])
@@ -269,7 +277,8 @@ def write_metadata(version,
                    no_data_tweets=-1):
     # table name | complete | total tweets | total tweets with numbers
     # | total numbers | number of differnt numbers | total of non numbers
-    # | total of no tweet data | processing_latency_min | processing_latency_max
+    # | total of no tweet data | processing_latency_min |
+    # processing_latency_max
     # | processing_latency_avg | database_latency_min database_latency_max
     # | database_latency_avg
     # tn_3_2017_10_19_24
@@ -277,7 +286,8 @@ def write_metadata(version,
     metadata_table_name = "tn_" + str(version) + "_metadata"
     dif_nums = c.execute("SELECT * FROM " + table_name)
     database_latency_avg = database_latency_avg_sum / database_latency_num
-    processing_latency_avg = processing_latency_avg_sum / processing_latency_num
+    processing_latency_avg = \
+        processing_latency_avg_sum / processing_latency_num
     print("Writing Metadate for Table: " + table_name)
     logging.info("Writing Metadate for Table: " + table_name)
     try:
@@ -299,7 +309,8 @@ def write_metadata(version,
                   "processing_latency_avg INT, "
                   "database_latency_min INT, "
                   "database_latency_max INT, "
-                  "database_latency_avg INT)")
+                  "database_latency_avg INT, "
+                  "stream_speed_divider INT)")
         db.commit()
 
     if c.execute("select * from "
@@ -313,8 +324,10 @@ def write_metadata(version,
                   " total_nums, dif_nums, non_nums, no_data_tweets, "
                   "processing_latency_min, processing_latency_max, "
                   "processing_latency_avg, database_latency_min, "
-                  "database_latency_max, database_latency_avg)"
-                  " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                  "database_latency_max, database_latency_avg, "
+                  "stream_speed_divider)"
+                  " VALUES (%s, %s, %s, %s, %s, %s, %s, "
+                  "%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                   (version,
                     table_name,
                     is_complete,
@@ -329,7 +342,8 @@ def write_metadata(version,
                     processing_latency_avg,
                     database_latency_min,
                     database_latency_max,
-                    database_latency_avg))
+                    database_latency_avg,
+                    stream_speed_divider))
     else:
         print("Updating Row")
         c.execute("UPDATE "
@@ -348,7 +362,8 @@ def write_metadata(version,
                   "processing_latency_avg=%s, "
                   "database_latency_min=%s, "
                   "database_latency_max=%s, "
-                  "database_latency_avg=%s "
+                  "database_latency_avg=%s, "
+                  "stream_speed_divider=%s "
                   "WHERE table_name=%s",
                   (version,
                     table_name,
@@ -365,6 +380,7 @@ def write_metadata(version,
                     database_latency_min,
                     database_latency_max,
                     database_latency_avg,
+                    stream_speed_divider,
                     table_name))
     # c.execute("INSERT INTO " + metadata_table_name
 
