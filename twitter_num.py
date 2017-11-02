@@ -10,7 +10,7 @@ import pymysql
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 
-current_version = 9  # must be int
+current_version = 10  # must be int
 auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB',
                     'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
 auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa',
