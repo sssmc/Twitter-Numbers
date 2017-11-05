@@ -11,7 +11,7 @@ from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 
 current_version = 11  # must be int
-log_file_name = "tn_" + str(current_version) + ".log"
+log_file_name = "logs/tn_" + str(current_version) + ".log"
 auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB',
                     'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
 auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa',
