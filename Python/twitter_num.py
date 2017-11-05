@@ -5,6 +5,7 @@ import time
 import datetime
 import threading
 import logging
+import os
 
 import pymysql
 from tweepy import Stream, OAuthHandler
@@ -16,10 +17,12 @@ auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB',
                     'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
 auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa',
                       'PaWOAasOFoPFDdYMARVr31mK1iy35sOqhZzpr1fDmNkZX')
+os.makedirs(os.path.dirname(log_file_name), exist_ok=True)
 
 logging.basicConfig(filename=log_file_name,
                     level=logging.INFO,
                     format="%(asctime)s:%(levelname)s:%(message)s")
+
 # tweets tweets_w_nums total_nums non_nums no_data_tweets
 stream_speed_divider = 2
 queue = []
