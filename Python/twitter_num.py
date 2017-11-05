@@ -10,18 +10,20 @@ import pymysql
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 
-current_version = 10  # must be int
+current_version = 11  # must be int
+log_file_name = "tn_" + str(current_version) + ".log"
 auth = OAuthHandler('rVBGZlv0fXG535e6XtNFTHKFB',
                     'a8uK4zSu5uku5mpOXggQxa9k29QDF4aEjbAWDOuBDZX1h59WhT')
 auth.set_access_token('3260207947-ieMSsYpzSwuCkM5ceM4c8AudzQv0QHpElLULAFa',
                       'PaWOAasOFoPFDdYMARVr31mK1iy35sOqhZzpr1fDmNkZX')
 
-logging.basicConfig(filename='tn_' + str(current_version) + '.log',
+logging.basicConfig(filename=log_file_name,
                     level=logging.INFO,
                     format="%(asctime)s:%(levelname)s:%(message)s")
 # tweets tweets_w_nums total_nums non_nums no_data_tweets
 stream_speed_divider = 2
 queue = []
+queue_len_warning_threshold = 150
 tweet_data = [0, 0, 0, 0, 0]
 database_latency_min = -1
 database_latency_max = 0
@@ -317,7 +319,9 @@ def write_metadata(version,
                   "database_latency_min INT, "
                   "database_latency_max INT, "
                   "database_latency_avg INT, "
-                  "stream_speed_divider INT)")
+                  "stream_speed_divider INT, "
+                  "queue_len_warning_threshold INT, "
+                  "log_file_name CHAR(20))")
         db.commit()
 
     if c.execute("select * from "
@@ -332,9 +336,10 @@ def write_metadata(version,
                   "processing_latency_min, processing_latency_max, "
                   "processing_latency_avg, database_latency_min, "
                   "database_latency_max, database_latency_avg, "
-                  "stream_speed_divider)"
+                  "stream_speed_divider, queue_len_warning_threshold, "
+                  "log_file_name)"
                   " VALUES (%s, %s, %s, %s, %s, %s, %s, "
-                  "%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                  "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                   (version,
                     table_name,
                     is_complete,
@@ -350,7 +355,9 @@ def write_metadata(version,
                     database_latency_min,
                     database_latency_max,
                     database_latency_avg,
-                    stream_speed_divider))
+                    stream_speed_divider,
+                    queue_len_warning_threshold,
+                    log_file_name))
     else:
         print("Updating Row")
         c.execute("UPDATE "
@@ -370,7 +377,9 @@ def write_metadata(version,
                   "database_latency_min=%s, "
                   "database_latency_max=%s, "
                   "database_latency_avg=%s, "
-                  "stream_speed_divider=%s "
+                  "stream_speed_divider=%s, "
+                  "queue_len_warning_threshold=%s, "
+                  "log_file_name=%s "
                   "WHERE table_name=%s",
                   (version,
                     table_name,
@@ -388,6 +397,8 @@ def write_metadata(version,
                     database_latency_max,
                     database_latency_avg,
                     stream_speed_divider,
+                    queue_len_warning_threshold,
+                    log_file_name,
                     table_name))
     # c.execute("INSERT INTO " + metadata_table_name
 
@@ -429,8 +440,13 @@ def main_loop():
                                      old_table_name=old_table_name)
                     is_complete = 1
                     if queue_len_warning is True:
-                        print("Queue Length Above 100: " + str(len(queue)))
-                        logging.warning("Queue Length Above 100: "
+                        print("Queue Length Above: "
+                              + queue_len_warning_threshold
+                              + ":"
+                              + str(len(queue)))
+                        logging.warning("Queue Length Above: "
+                                        + queue_len_warning_threshold
+                                        + ":"
                                         + str(len(queue)))
                 except pymysql.DatabaseError as error:
                     print("database already created(in loop)")
@@ -452,15 +468,23 @@ def main_loop():
                 del queue[0]
                 d4 = datetime.datetime.now()
                 database_latency((d4 - d3).microseconds)
-                if len(queue) > 100:
+                if len(queue) > queue_len_warning_threshold:
                     if queue_len_warning is False:
-                        print("Queue Length Above 100: " + str(len(queue)))
-                        logging.warning("Queue Length Above 100: "
+                        print("Queue Length Above: "
+                              + queue_len_warning_threshold
+                              + ":"
+                              + str(len(queue)))
+                        logging.warning("Queue Length Above: "
+                                        + queue_len_warning_threshold
+                                        + ":"
                                         + str(len(queue)))
                         queue_len_warning = True
-                if len(queue) < 90 and queue_len_warning is True:
-                    print("Queue Length Under 90")
-                    logging.warning("Queue Length Under 90")
+                if len(queue) < (queue_len_warning_threshold - 10) \
+                        and queue_len_warning is True:
+                    print("Queue Length Under "
+                          + queue_len_warning_threshold - 1)
+                    logging.warning("Queue Length Under "
+                                    + queue_len_warning_threshold - 1)
                     queue_len_warning = False
     except KeyboardInterrupt:
         print("closing database")
